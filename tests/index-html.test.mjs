@@ -146,6 +146,12 @@ test('최근 기록은 5건까지만 이 기기에 보관한다', () => {
   assert.match(html, /최근 5건/);
 });
 
+test('탭 바가 헤더 높이에 맞춰 붙는다 (헤더에 가려지지 않음)', () => {
+  assert.match(html, /position:sticky;top:var\(--header-h,100px\)/);
+  assert.match(html, /function syncHeaderHeight\(\)/);
+  assert.match(html, /setProperty\('--header-h'/);
+});
+
 test('비밀값이 화면 코드에 들어 있지 않다', () => {
   assert.doesNotMatch(html, /sk-ant-/);
   assert.doesNotMatch(html, /ANTHROPIC_API_KEY\s*=\s*['"][^'"]+/);

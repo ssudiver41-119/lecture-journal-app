@@ -75,7 +75,7 @@ body{
 
 .tab-bar{
   display:flex;background:#fff;border-bottom:1px solid var(--bdr);
-  padding:0 8px;position:sticky;top:calc(88px + var(--sat));z-index:99;
+  padding:0 8px;position:sticky;top:var(--header-h,100px);z-index:99;
 }
 .tab{
   flex:1;text-align:center;padding:12px 4px 11px;font-size:12.5px;font-weight:700;
@@ -529,9 +529,12 @@ function todayKST(){
   try{const h=localStorage.getItem(HISTORY_KEY);if(h)savedList=JSON.parse(h).slice(0,HISTORY_LIMIT);}catch(e){}
   document.getElementById('date').value=todayKST();
   applySettings();
+  syncHeaderHeight();
   renderHistory();
   updateCounter();
   checkServer(false);
+  window.addEventListener('resize', syncHeaderHeight);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(syncHeaderHeight).catch(()=>{});
 
   window.addEventListener('beforeinstallprompt',e=>{
     e.preventDefault();deferredPrompt=e;
@@ -541,6 +544,13 @@ function todayKST(){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 })();
+
+// 헤더 높이가 기기·글꼴에 따라 달라지므로 탭 바가 헤더 아래에 정확히 붙도록 실측값을 넘긴다.
+function syncHeaderHeight(){
+  const header = document.querySelector('.header');
+  if(!header) return;
+  document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+}
 
 function applySettings(){
   document.getElementById('headerOrg').textContent = settings.affiliation || '119복지인권연구소 · ONEBLOCKAI연구소';
