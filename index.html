@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+
+  <!-- ── PWA 기본 ── -->
+  <meta name="theme-color" content="#1f3f66"/>
+  <link rel="manifest" href="manifest.json"/>
+
+  <!-- ── iOS Safari 홈화면 설치 ── -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="강의일지"/>
+  <meta name="format-detection" content="telephone=no"/>
+  <link rel="apple-touch-icon" href="icons/icon-180.png"/>
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png"/>
+
+  <!-- Android / 일반 -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png"/>
+
+  <!-- SEO / 공유 -->
+  <meta name="description" content="강의일지·결과보고서·안내 메일을 3분 만에 — 119복지인권연구소 · ONEBLOCKAI연구소 이대영 강사 전용"/>
+  <meta property="og:title" content="강의일지 자동생성"/>
+  <meta property="og:description" content="강의 메모 몇 줄로 강의일지·기관 제출용 결과보고서·안내 메일 초안을 만들고 구글 드라이브에 저장합니다."/>
+  <meta property="og:image" content="icons/icon-512.png"/>
+  <meta property="og:type" content="website"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+
+  <title>강의일지 자동생성 · 119복지인권연구소</title>
+  <style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;height:-webkit-fill-available}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Malgun Gothic',sans-serif;
+  background:#eef2f7;color:#17222e;
+  min-height:100vh;min-height:-webkit-fill-available;
+  overscroll-behavior:none;-webkit-overflow-scrolling:touch;
+}
+:root{
+  --p:#1f3f66;--p2:#15304f;--pl:#eaf1f8;
+  --accent:#c8781e;--accent-l:#fdf3e5;
+  --sur:#ffffff;--sur2:#f4f7fa;
+  --bdr:#e2e8f0;--bdr2:#cbd6e2;
+  --tx:#17222e;--tx2:#66788c;
+  --r:16px;--rm:10px;
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+}
+.app{max-width:520px;margin:0 auto;min-height:100vh;background:#eef2f7}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#1f3f66,#122a44);
+  padding-top:calc(20px + var(--sat));
+  padding-bottom:16px;
+  padding-left:calc(20px + var(--sal));
+  padding-right:calc(20px + var(--sar));
+  color:#fff;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 10px rgba(10,30,50,.18);
+}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.header-org{font-size:11px;font-weight:600;letter-spacing:.02em;color:#a9c4e0;margin-bottom:4px}
+.header h1{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.header-sub{font-size:11.5px;color:#b9cde3;margin-top:5px;line-height:1.5}
+.icon-btn{
+  background:rgba(255,255,255,.16);border:none;border-radius:50%;
+  width:38px;height:38px;color:#fff;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.icon-btn:active{background:rgba(255,255,255,.3)}
+
+.tab-bar{
+  display:flex;background:#fff;border-bottom:1px solid var(--bdr);
+  padding:0 8px;position:sticky;top:calc(88px + var(--sat));z-index:99;
+}
+.tab{
+  flex:1;text-align:center;padding:12px 4px 11px;font-size:12.5px;font-weight:700;
+  cursor:pointer;color:var(--tx2);border:none;background:none;
+  border-bottom:2.5px solid transparent;transition:all .2s;
+}
+.tab.active{color:var(--p);border-bottom-color:var(--p)}
+
+.scroll-body{
+  padding:16px;
+  padding-left:calc(16px + var(--sal));
+  padding-right:calc(16px + var(--sar));
+  padding-bottom:calc(40px + var(--sab));
+}
+
+/* ── CARDS ── */
+.card{background:var(--sur);border-radius:var(--r);padding:16px;margin-bottom:13px;box-shadow:0 1px 4px rgba(16,40,70,.07)}
+.card-title{font-size:11.5px;font-weight:800;color:var(--tx2);letter-spacing:.04em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--p);flex-shrink:0}
+.card-hint{font-size:11.5px;color:var(--tx2);line-height:1.6;margin-top:-4px;margin-bottom:10px}
+
+/* ── FORM ── */
+label{display:block;font-size:13px;color:var(--tx2);margin-bottom:5px;margin-top:12px;font-weight:600}
+label:first-of-type{margin-top:0}
+label .req{color:var(--accent);margin-left:2px}
+input,select,textarea{
+  width:100%;font-size:16px;padding:11px 13px;
+  border:1.5px solid var(--bdr);border-radius:var(--rm);
+  background:#fff;color:var(--tx);font-family:inherit;
+  transition:border-color .2s;-webkit-appearance:none;appearance:none;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p)}
+input.invalid,textarea.invalid{border-color:#d64545;background:#fff7f7}
+textarea{resize:vertical;min-height:92px;line-height:1.65}
+select{background-image:linear-gradient(45deg,transparent 50%,#7d8fa3 50%),linear-gradient(135deg,#7d8fa3 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{
+  padding:8px 13px;border-radius:20px;font-size:13px;
+  border:1.5px solid var(--bdr);cursor:pointer;
+  color:var(--tx2);background:#fff;transition:all .15s;font-weight:600;
+  -webkit-user-select:none;user-select:none;
+}
+.chip.sel{background:var(--p);color:#fff;border-color:var(--p)}
+.chip:active{transform:scale(.96)}
+.chip.insert{background:var(--sur2);font-weight:500;font-size:12.5px;padding:7px 11px}
+
+/* ── 음성 메모 ── */
+.memo-tools{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.voice-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 13px;border-radius:20px;border:1.5px solid var(--bdr);
+  background:#fff;color:var(--p);font-size:12.5px;font-weight:700;cursor:pointer;
+}
+.voice-btn.rec{background:#fdecec;border-color:#d64545;color:#c03b3b}
+.voice-hint{font-size:11.5px;color:var(--tx2)}
+
+/* ── 양식 선택 ── */
+.format-list{display:flex;flex-direction:column;gap:9px}
+.format-item{
+  display:flex;gap:11px;align-items:flex-start;
+  border:1.5px solid var(--bdr);border-radius:var(--rm);
+  padding:12px 13px;cursor:pointer;background:#fff;transition:all .15s;
+}
+.format-item.sel{border-color:var(--p);background:var(--pl)}
+.format-radio{
+  width:19px;height:19px;border-radius:50%;border:2px solid var(--bdr2);
+  flex-shrink:0;margin-top:2px;position:relative;background:#fff;
+}
+.format-item.sel .format-radio{border-color:var(--p)}
+.format-item.sel .format-radio::after{
+  content:'';position:absolute;inset:3px;border-radius:50%;background:var(--p);
+}
+.format-main{flex:1;min-width:0}
+.format-name{font-size:14px;font-weight:700;color:var(--tx);line-height:1.4}
+.format-sub{font-size:11.5px;color:var(--tx2);margin-top:3px;line-height:1.5}
+
+/* ── GENERATE BUTTON ── */
+.generate-btn{
+  width:100%;padding:16px;
+  background:var(--p);color:#fff;border:none;
+  border-radius:var(--r);font-size:16px;font-weight:800;
+  cursor:pointer;margin-top:4px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 16px rgba(31,63,102,.35);
+  transition:all .2s;-webkit-user-select:none;user-select:none;
+}
+.generate-btn:active{opacity:.9;transform:scale(.99)}
+.generate-btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+.spinner{display:inline-block;width:19px;height:19px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RESULT ── */
+.result-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+.badge{display:inline-block;background:var(--pl);color:var(--p);font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:10px}
+.badge.gray{background:var(--sur2);color:var(--tx2)}
+.result-editor{
+  width:100%;min-height:380px;font-size:14.5px;line-height:1.85;
+  padding:15px;border:1.5px solid var(--bdr);border-radius:var(--rm);
+  background:var(--sur2);white-space:pre-wrap;resize:vertical;color:var(--tx);
+}
+.counter{font-size:11.5px;color:var(--tx2);text-align:right;margin-top:6px}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.btn-sec{
+  padding:13px 6px;background:var(--sur2);border:1.5px solid var(--bdr);
+  border-radius:var(--rm);font-size:13.5px;font-weight:700;color:var(--tx);
+  cursor:pointer;text-align:center;transition:all .15s;
+}
+.btn-sec:active{background:var(--bdr)}
+.btn-drive{background:var(--p);color:#fff;border-color:var(--p)}
+.btn-drive:active{background:var(--p2)}
+.btn-sec:disabled{opacity:.55;cursor:not-allowed}
+.placeholder-note{
+  color:var(--tx2);font-size:13px;text-align:center;padding:44px 16px;line-height:2.1;
+}
+.placeholder-note .big{font-size:40px;display:block;margin-bottom:10px}
+
+/* ── 저장 상태 ── */
+.save-status{margin-top:12px;border-radius:var(--rm);padding:13px 14px;font-size:12.5px;line-height:1.7;display:none}
+.save-status.show{display:block}
+.save-status.ok{background:#eef8f1;border:1px solid #b7dfc6;color:#1e5b39}
+.save-status.demo{background:var(--accent-l);border:1px solid #f0d3ac;color:#7a4a10}
+.save-status.err{background:#fdecec;border:1px solid #f0c0c0;color:#8c2f2f}
+.save-status b{font-weight:800}
+.save-status a{color:inherit;font-weight:800;text-decoration:underline;word-break:break-all}
+.save-links{display:flex;flex-direction:column;gap:4px;margin-top:7px}
+
+/* ── HISTORY ── */
+.history-item{
+  background:var(--sur);border-radius:var(--r);padding:14px;
+  margin-bottom:10px;cursor:pointer;
+  box-shadow:0 1px 4px rgba(16,40,70,.07);transition:transform .15s;
+}
+.history-item:active{transform:scale(.995)}
+.hi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:8px}
+.hi-name{font-size:14.5px;font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hi-right{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.hi-date{font-size:11px;color:var(--tx2)}
+.hi-del{background:none;border:none;color:var(--tx2);font-size:15px;cursor:pointer;padding:2px 3px;line-height:1}
+.hi-preview{font-size:12.5px;color:var(--tx2);line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hi-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.hi-tag{display:inline-block;background:var(--pl);color:var(--p);font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:9px}
+.hi-tag.doc{background:#eef8f1;color:#1e5b39}
+.empty-state{text-align:center;padding:56px 20px;color:var(--tx2);font-size:13.5px;line-height:2.1}
+.empty-icon{font-size:42px;margin-bottom:10px;display:block}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,20,34,.55);z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal{
+  background:#fff;border-radius:24px 24px 0 0;
+  padding:20px calc(20px + var(--sar)) calc(24px + var(--sab)) calc(20px + var(--sal));
+  width:100%;max-width:520px;animation:slideUp .28s ease;max-height:92vh;overflow-y:auto;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:#dde3ea;border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:6px}
+.modal-sub{font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:14px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bdr);gap:10px}
+.setting-label{font-size:13.5px;font-weight:700}
+.setting-sub{font-size:11.5px;color:var(--tx2);margin-top:3px;line-height:1.55}
+.modal-btn{width:100%;padding:14px;background:var(--p);color:#fff;border:none;border-radius:var(--rm);font-size:15px;font-weight:800;cursor:pointer;margin-top:12px}
+.modal-btn:active{opacity:.88}
+.modal-btn.ghost{background:#fff;color:var(--tx2);border:1.5px solid var(--bdr)}
+.status-line{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--tx2);margin-top:9px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#c2ccd8;flex-shrink:0}
+.status-dot.ok{background:#2e9e5b}
+.status-dot.warn{background:#d9a13b}
+.status-dot.err{background:#d64545}
+
+/* ── MISC ── */
+.toast{
+  position:fixed;bottom:calc(20px + var(--sab));left:50%;transform:translateX(-50%);
+  background:#0f1b28;color:#fff;padding:11px 20px;border-radius:22px;
+  font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;
+  pointer-events:none;z-index:9000;max-width:90vw;text-align:center;line-height:1.5;
+  box-shadow:0 4px 14px rgba(0,0,0,.28);
+}
+.toast.show{opacity:1}
+.section{display:none}
+.section.active{display:block}
+.install-banner{
+  background:var(--pl);border:1.5px solid var(--p);border-radius:var(--rm);
+  padding:11px 13px;margin-bottom:13px;display:flex;align-items:center;gap:9px;cursor:pointer;
+}
+.install-banner.hidden{display:none}
+.install-text{flex:1;font-size:12.5px;color:var(--p);font-weight:700;line-height:1.5}
+.install-close{background:none;border:none;color:var(--tx2);font-size:17px;cursor:pointer;padding:0 3px;flex-shrink:0}
+.footnote{font-size:11px;color:var(--tx2);text-align:center;line-height:1.7;padding:6px 4px 0}
+  </style>
+</head>
+<body>
+
+<div class="app" id="mainApp">
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="header-org" id="headerOrg">119복지인권연구소 · ONEBLOCKAI연구소</div>
+        <h1>강의일지 · 결과보고</h1>
+        <div class="header-sub" id="headerSub">이대영 강사 전용 · 강의 메모 몇 줄이면 충분합니다</div>
+      </div>
+      <button class="icon-btn" onclick="openSettings()" aria-label="설정">⚙</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" id="tab-btn-write" onclick="switchTab('write')">✏️ 작성</button>
+    <button class="tab" id="tab-btn-result" onclick="switchTab('result')">📄 결과</button>
+    <button class="tab" id="tab-btn-history" onclick="switchTab('history')">🗂 최근</button>
+  </div>
+
+  <!-- ══ 작성 탭 ══ -->
+  <div id="tab-write" class="section active scroll-body">
+
+    <div class="install-banner hidden" id="installBanner" onclick="installPWA()">
+      <span style="font-size:19px">📲</span>
+      <div class="install-text">홈화면에 추가하면 앱처럼 바로 열 수 있어요</div>
+      <button class="install-close" onclick="dismissInstall(event)">✕</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>강의 정보</div>
+
+      <label for="date">강의 날짜</label>
+      <input type="date" id="date"/>
+
+      <label for="org">기관명 <span class="req">*</span></label>
+      <input type="text" id="org" placeholder="예: 구래종합사회복지관" autocomplete="organization" maxlength="80"/>
+
+      <label for="field">교육 분야</label>
+      <select id="field" onchange="toggleFieldEtc()">
+        <option value="AI 실무 교육">AI 실무 교육</option>
+        <option value="인권교육">인권교육</option>
+        <option value="개인정보보호법">개인정보보호법</option>
+        <option value="4대 법정의무교육">4대 법정의무교육</option>
+        <option value="기타">기타 (직접 입력)</option>
+      </select>
+      <input type="text" id="fieldEtc" placeholder="교육 분야를 직접 입력하세요" maxlength="40" style="display:none;margin-top:8px"/>
+
+      <label>진행 방식</label>
+      <div class="chip-group" id="method-chips">
+        <span class="chip sel" data-value="대면" onclick="selectMethod(this)">대면</span>
+        <span class="chip" data-value="Zoom 온라인" onclick="selectMethod(this)">Zoom 온라인</span>
+        <span class="chip" data-value="혼합" onclick="selectMethod(this)">혼합</span>
+      </div>
+
+      <label for="audience">대상·인원</label>
+      <input type="text" id="audience" placeholder="예: 사회복지사 30명 / 요양보호사 40명" maxlength="60"/>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>강의 메모 · 핵심 내용 <span class="req" style="color:var(--accent)">*</span></div>
+      <div class="card-hint">키워드 몇 줄, 또는 음성으로 말하면 AI가 문장으로 정리합니다. 숫자·질문·현장 반응을 적어 두면 결과가 좋아집니다.</div>
+      <textarea id="memo" placeholder="예: 3시간 특강. 생성형 AI 개념 20분, 프롬프트 4원칙 설명, 실습 2개(민원 답변, 보도자료), 질문 많았던 것 - 개인정보 입력해도 되나, 유료 결제는 누가 하나. 원장님 마지막에 감사 인사. 다음엔 실습 시간 더 달라고 함." rows="6" maxlength="8000"></textarea>
+      <div class="memo-tools">
+        <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎙 음성으로 말하기</button>
+        <span class="voice-hint" id="voiceHint">Android Chrome·PC 크롬에서 동작</span>
+      </div>
+      <div class="chip-group" style="margin-top:9px">
+        <span class="chip insert" onclick="insertMemo('개념 설명')">+ 개념 설명</span>
+        <span class="chip insert" onclick="insertMemo('실습 진행')">+ 실습 진행</span>
+        <span class="chip insert" onclick="insertMemo('질의응답')">+ 질의응답</span>
+        <span class="chip insert" onclick="insertMemo('현장 반응 좋았음')">+ 현장 반응</span>
+        <span class="chip insert" onclick="insertMemo('개선 요청')">+ 개선 요청</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>생성 양식</div>
+      <div class="format-list" id="format-list">
+        <div class="format-item sel" data-format="journal" onclick="selectFormat(this)">
+          <div class="format-radio"></div>
+          <div class="format-main">
+            <div class="format-name">① 강의일지</div>
+            <div class="format-sub">내부 기록용 · 시간대별 진행과 개선점까지</div>
+          </div>
+        </div>
+        <div class="format-item" data-format="report" onclick="selectFormat(this)">
+          <div class="format-radio"></div>
+          <div class="format-main">
+            <div class="format-name">② 기관 제출용 결과보고서</div>
+            <div class="format-sub">공문에 붙여 쓰는 개요·내용·성과·향후 계획</div>
+          </div>
+        </div>
+        <div class="format-item" data-format="mail" onclick="selectFormat(this)">
+          <div class="format-radio"></div>
+          <div class="format-main">
+            <div class="format-name">③ 후속 감사·자료 안내 메일 초안</div>
+            <div class="format-sub">제목과 본문까지, 정중한 존댓말로</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>서류 · 정산 메모 <span style="font-weight:600;color:var(--tx2)">(선택)</span></div>
+      <textarea id="note" placeholder="예: 강사료 세금계산서 발행, 결과보고서는 교육 후 5일 내 제출, 수료증 30부 요청" rows="3" maxlength="500"></textarea>
+    </div>
+
+    <button class="generate-btn" id="gen-btn" onclick="generateDocument()">
+      <span id="btn-text">✨ AI로 문서 만들기</span>
+    </button>
+    <p class="footnote">생성된 내용은 결과 탭에서 직접 고칠 수 있고, 구글 드라이브에 저장하면 문서와 누적 시트에 기록됩니다.</p>
+  </div>
+
+  <!-- ══ 결과 탭 ══ -->
+  <div id="tab-result" class="section scroll-body">
+    <div class="card">
+      <div class="result-meta">
+        <span class="badge" id="result-badge">생성 전</span>
+        <span class="badge gray" id="result-target">—</span>
+      </div>
+      <textarea class="result-editor" id="result-editor" placeholder="아직 생성된 문서가 없습니다.&#10;왼쪽 '작성' 탭에서 강의 정보와 메모를 넣고 [AI로 문서 만들기]를 눌러 주세요." oninput="onResultInput()"></textarea>
+      <div class="counter" id="result-counter">0자</div>
+
+      <div class="action-row">
+        <button class="btn-sec" onclick="copyResult()">📋 전체 복사</button>
+        <button class="btn-sec btn-drive" id="save-btn" onclick="saveToDrive()">☁ 드라이브에 저장</button>
+      </div>
+
+      <div class="save-status" id="save-status"></div>
+    </div>
+  </div>
+
+  <!-- ══ 최근 탭 ══ -->
+  <div id="tab-history" class="section scroll-body">
+    <div id="history-list">
+      <div class="empty-state">
+        <span class="empty-icon">🗂</span>
+        최근 기록이 없습니다.<br>
+        문서를 만들면 이 기기에 최근 5건까지 임시로 남습니다.
+      </div>
+    </div>
+    <p class="footnote">최근 기록은 이 기기의 브라우저에만 저장됩니다. 오래 보관할 문서는 드라이브에 저장해 주세요.</p>
+  </div>
+</div>
+
+<!-- 설정 모달 -->
+<div class="modal-overlay hidden" id="settingsModal" onclick="closeSettingsOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙ 설정</div>
+    <div class="modal-sub">소속·강사명은 생성되는 문서에 그대로 들어갑니다. 이 기기에만 저장됩니다.</div>
+
+    <label for="set-affiliation">소속</label>
+    <input type="text" id="set-affiliation" maxlength="60" placeholder="119복지인권연구소 · ONEBLOCKAI연구소"/>
+    <label for="set-lecturer">강사명</label>
+    <input type="text" id="set-lecturer" maxlength="40" placeholder="이대영"/>
+
+    <div style="margin-top:22px">
+      <div class="card-title"><span class="dot"></span>연결 설정</div>
+      <label for="set-code">접근 코드 (APP_ACCESS_CODE)</label>
+      <input type="password" id="set-code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="서버에 설정된 경우에만 입력"/>
+      <div class="setting-sub" style="margin-top:6px">서버에 접근 코드가 설정되어 있으면 생성·저장에 필요합니다. 이 기기에만 저장되고, 요청 헤더로만 전송됩니다.</div>
+      <div class="status-line">
+        <span class="status-dot" id="conn-dot"></span>
+        <span id="conn-text">연결 상태를 확인하지 않았습니다</span>
+      </div>
+      <button class="modal-btn ghost" style="margin-top:10px;padding:11px" onclick="checkServer(true)">연결 확인</button>
+    </div>
+
+    <div style="margin-top:22px">
+      <div class="card-title"><span class="dot"></span>데이터 관리</div>
+      <div class="setting-row" style="border-bottom:none">
+        <div>
+          <div class="setting-label">최근 기록 삭제</div>
+          <div class="setting-sub">이 기기에 남은 최근 5건을 지웁니다 (드라이브 문서는 그대로)</div>
+        </div>
+        <button class="btn-sec" onclick="clearHistory()" style="padding:7px 12px;font-size:12px;border-radius:8px;color:#c03b3b;border-color:#c03b3b;background:#fff7f7;white-space:nowrap">삭제</button>
+      </div>
+    </div>
+
+    <button class="modal-btn" onclick="saveSettings()">설정 저장</button>
+    <button class="modal-btn ghost" onclick="closeSettings()">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ────────────────────────────────────────────────
+// 상태
+// ────────────────────────────────────────────────
+const HISTORY_KEY = 'ljHistory';
+const SETTINGS_KEY = 'ljSettings';
+const HISTORY_LIMIT = 5;
+
+let settings = { affiliation: '119복지인권연구소 · ONEBLOCKAI연구소', lecturer: '이대영', accessCode: '' };
+let currentResult = '';
+let currentMeta = null;          // 결과와 함께 저장할 강의 정보
+let savedList = [];
+let selectedFormat = 'journal';
+let selectedMethod = '대면';
+let deferredPrompt = null;
+let recognizing = false;
+let recognition = null;
+
+const FORMATS = {
+  journal: { label: '강의일지', badge: '강의일지 · 내부 기록용' },
+  report:  { label: '결과보고서', badge: '결과보고서 · 기관 제출용' },
+  mail:    { label: '메일초안', badge: '메일 초안 · 후속 안내' }
+};
+
+const FORMAT_GUIDE = {
+  journal:
+    '내부 기록용 강의일지입니다. 다음 순서로 작성하세요.\n' +
+    '1. 강의 개요 (일시·기관·분야·대상/인원·진행 방식·강사)\n' +
+    '2. 강의 목표 (2~3개)\n' +
+    '3. 진행 내용 (시간대별로 나누어 무엇을 어떤 방식으로 진행했는지)\n' +
+    '4. 주요 질의와 답변 (메모에 있는 질문만)\n' +
+    '5. 현장 반응과 특이사항\n' +
+    '6. 개선점과 다음 강의에 반영할 점',
+  report:
+    '기관에 제출하는 결과보고서입니다. "~하였음", "~함" 형태의 공문체로 작성하세요.\n' +
+    '1. 교육 개요 (일시·기관·분야·대상/인원·방식·강사)\n' +
+    '2. 추진 배경 및 목적\n' +
+    '3. 교육 내용 (핵심 주제와 진행 방법)\n' +
+    '4. 운영 결과 (확인된 사실만. 만족도·참석률 등 수치가 메모에 없으면 "(확인 필요)"로 표시)\n' +
+    '5. 성과 및 기대효과\n' +
+    '6. 향후 계획 및 건의사항\n' +
+    '맨 끝에 "위와 같이 교육을 실시하였습니다."로 마무리하고, 작성자·소속을 적으세요.',
+  mail:
+    '강의 후 기관 담당자에게 보내는 감사·자료 안내 메일 초안입니다.\n' +
+    '첫 줄에 "제목:"으로 시작하는 메일 제목을 쓰고, 빈 줄 뒤에 본문을 작성하세요.\n' +
+    '본문은 인사 → 강의에 대한 감사 → 안내할 자료(교안·수료증·결과보고서·정산 서류 중 메모에 있는 것) → 요청하거나 확인할 사항 → 맺음말 순서로, 정중한 존댓말로 300~500자 정도.\n' +
+    '서명은 "이대영 드림"과 소속으로 끝내고, 확정되지 않은 일정·금액은 "(확인 후 안내)"로 적으세요.'
+};
+
+// ────────────────────────────────────────────────
+// 한국(KST) 기준 오늘 날짜 YYYY-MM-DD
+// 기기 시간대가 달라도 새벽에 한국 날짜가 뜨게 한다.
+// ────────────────────────────────────────────────
+function todayKST(){
+  const now=new Date();
+  try{
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+    const pick=t=>{const p=parts.find(x=>x.type===t);return p?p.value:'';};
+    const y=pick('year'),m=pick('month'),d=pick('day');
+    if(y&&m&&d)return `${y}-${m}-${d}`;
+  }catch(e){}
+  // Intl 미지원 환경 폴백: UTC+9 고정 계산
+  const kst=new Date(now.getTime()+9*60*60*1000);
+  return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth()+1).padStart(2,'0')}-${String(kst.getUTCDate()).padStart(2,'0')}`;
+}
+
+// ────────────────────────────────────────────────
+// 초기화
+// ────────────────────────────────────────────────
+(function init(){
+  try{const s=localStorage.getItem(SETTINGS_KEY);if(s)settings={...settings,...JSON.parse(s)};}catch(e){}
+  try{const h=localStorage.getItem(HISTORY_KEY);if(h)savedList=JSON.parse(h).slice(0,HISTORY_LIMIT);}catch(e){}
+  document.getElementById('date').value=todayKST();
+  applySettings();
+  renderHistory();
+  updateCounter();
+  checkServer(false);
+
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();deferredPrompt=e;
+    document.getElementById('installBanner').classList.remove('hidden');
+  });
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+})();
+
+function applySettings(){
+  document.getElementById('headerOrg').textContent = settings.affiliation || '119복지인권연구소 · ONEBLOCKAI연구소';
+  document.getElementById('headerSub').textContent = (settings.lecturer ? settings.lecturer + ' 강사 전용 · ' : '') + '강의 메모 몇 줄이면 충분합니다';
+}
+
+// ────────────────────────────────────────────────
+// 탭 · 입력 도우미
+// ────────────────────────────────────────────────
+function switchTab(t){
+  ['write','result','history'].forEach(k=>{
+    document.getElementById('tab-'+k).classList.toggle('active',k===t);
+    document.getElementById('tab-btn-'+k).classList.toggle('active',k===t);
+  });
+  if(t==='history')renderHistory();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function selectMethod(el){
+  document.querySelectorAll('#method-chips .chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedMethod = el.dataset.value;
+}
+
+function selectFormat(el){
+  document.querySelectorAll('#format-list .format-item').forEach(i=>i.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedFormat = el.dataset.format;
+}
+
+function toggleFieldEtc(){
+  const isEtc = document.getElementById('field').value === '기타';
+  document.getElementById('fieldEtc').style.display = isEtc ? 'block' : 'none';
+}
+
+function insertMemo(text){
+  const memo = document.getElementById('memo');
+  memo.value = memo.value.trim() ? memo.value.replace(/\s*$/,'') + '\n' + text : text;
+  memo.focus();
+}
+
+function fieldValue(){
+  const base = document.getElementById('field').value;
+  if(base==='기타'){
+    const etc = document.getElementById('fieldEtc').value.trim();
+    return etc || '기타';
+  }
+  return base;
+}
+
+// ────────────────────────────────────────────────
+// 음성 메모 (Web Speech API — 지원 브라우저에서만)
+// ────────────────────────────────────────────────
+function toggleVoice(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    showToast('이 브라우저에서는 음성 입력을 쓸 수 없습니다. 크롬(Android·PC)에서 열어 주세요.');
+    return;
+  }
+  if(recognizing && recognition){ recognition.stop(); return; }
+
+  recognition = new SR();
+  recognition.lang = 'ko-KR';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  const btn = document.getElementById('voiceBtn');
+  const hint = document.getElementById('voiceHint');
+
+  recognition.onstart = ()=>{
+    recognizing = true;
+    btn.classList.add('rec');
+    btn.textContent = '⏺ 듣는 중… (눌러서 멈춤)';
+    hint.textContent = '말한 내용이 메모에 차례로 들어갑니다';
+  };
+  recognition.onresult = (event)=>{
+    let added = '';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      if(event.results[i].isFinal) added += event.results[i][0].transcript + ' ';
+    }
+    if(added.trim()) insertMemo(added.trim());
+  };
+  recognition.onerror = (event)=>{
+    hint.textContent = '음성 입력 오류: ' + (event.error || 'unknown');
+  };
+  recognition.onend = ()=>{
+    recognizing = false;
+    btn.classList.remove('rec');
+    btn.textContent = '🎙 음성으로 말하기';
+    hint.textContent = 'Android Chrome·PC 크롬에서 동작';
+  };
+  try{ recognition.start(); }catch(e){ showToast('음성 입력을 시작하지 못했습니다.'); }
+}
+
+// ────────────────────────────────────────────────
+// 프롬프트 · 생성
+// ────────────────────────────────────────────────
+function buildPrompt(meta){
+  const formatGuide = FORMAT_GUIDE[meta.format] || FORMAT_GUIDE.journal;
+  return [
+    `아래 강의 정보와 메모를 근거로 ${FORMATS[meta.format].label}를 작성해 주세요.`,
+    '',
+    '[강의 정보]',
+    `- 강의 날짜: ${meta.date}`,
+    `- 기관명: ${meta.org}`,
+    `- 교육 분야: ${meta.field}`,
+    `- 진행 방식: ${meta.method}`,
+    `- 대상·인원: ${meta.audience || '(미입력)'}`,
+    `- 강사: ${meta.lecturer || '이대영'} (${meta.affiliation || '119복지인권연구소 · ONEBLOCKAI연구소'})`,
+    `- 서류·정산 메모: ${meta.note || '(없음)'}`,
+    '',
+    '[강의 메모]',
+    meta.memo,
+    '',
+    '[작성 형식]',
+    formatGuide,
+    '',
+    '[공통 지침]',
+    '- 한국어로, 실제 강의 현장에서 쓰는 자연스러운 문장으로 작성하세요.',
+    '- 메모에 없는 사실(참석 인원, 만족도 점수, 수강생 이름, 구체적 날짜 약속)은 지어내지 마세요. 꼭 필요한 자리는 "(확인 필요)"로 적으세요.',
+    '- 마크다운 서식 기호(**, ##, #, *, _, 백틱, ~~, >, |, ---)는 절대 쓰지 마세요. 소제목은 "1. 제목"처럼 번호로 시작하고, 목록은 번호(1., 2.)나 줄바꿈만 씁니다. 표를 만들지 마세요.',
+    '- 문서 맨 위에 제목을 한 줄로 쓰고, 그 아래에 소속·강사·날짜를 한 줄로 적으세요.',
+    '- 순수 일반 텍스트로만 출력하세요.'
+  ].join('\n');
+}
+
+function collectMeta(){
+  return {
+    date: document.getElementById('date').value || todayKST(),
+    org: document.getElementById('org').value.trim(),
+    field: fieldValue(),
+    format: selectedFormat,
+    method: selectedMethod,
+    audience: document.getElementById('audience').value.trim(),
+    memo: document.getElementById('memo').value.trim(),
+    note: document.getElementById('note').value.trim(),
+    lecturer: settings.lecturer || '이대영',
+    affiliation: settings.affiliation || '119복지인권연구소 · ONEBLOCKAI연구소'
+  };
+}
+
+async function generateDocument(){
+  const orgEl = document.getElementById('org');
+  const memoEl = document.getElementById('memo');
+  orgEl.classList.remove('invalid'); memoEl.classList.remove('invalid');
+
+  if(!orgEl.value.trim()){
+    orgEl.classList.add('invalid'); orgEl.focus();
+    showToast('기관명을 입력해 주세요');
+    return;
+  }
+  if(!memoEl.value.trim()){
+    memoEl.classList.add('invalid'); memoEl.focus();
+    showToast('강의 메모를 몇 줄만 적어 주세요');
+    return;
+  }
+
+  const meta = collectMeta();
+  const prompt = buildPrompt(meta);
+  const btn = document.getElementById('gen-btn');
+  const btnText = document.getElementById('btn-text');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> AI가 정리하고 있습니다…';
+
+  try{
+    const res = await fetch('/api/generate',{
+      method:'POST',
+      headers: requestHeaders(),
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json().catch(()=>({}));
+
+    if(res.status===401){
+      showToast('접근 코드가 필요합니다 — ⚙ 설정에서 입력해 주세요');
+      openSettings();
+      return;
+    }
+    if(!res.ok) throw new Error(data.error || '생성에 실패했습니다.');
+
+    currentResult = data.text || '';
+    currentMeta = meta;
+    setResult(currentResult);
+    addHistory({ ...meta, content: currentResult, savedAt: new Date().toISOString(), docUrl: '' });
+    switchTab('result');
+    if(data.truncated) showToast('분량이 길어 뒷부분이 잘렸습니다 — 메모를 줄여 다시 만들어 보세요');
+    else showToast(FORMATS[meta.format].label + '이 만들어졌습니다 ✓');
+  }catch(e){
+    showToast('오류: ' + (e && e.message ? e.message : '생성 실패'));
+  }finally{
+    btn.disabled = false;
+    btnText.textContent = '✨ AI로 문서 만들기';
+  }
+}
+
+function requestHeaders(){
+  const h = { 'Content-Type': 'application/json' };
+  if(settings.accessCode) h['x-app-code'] = settings.accessCode;
+  return h;
+}
+
+// ────────────────────────────────────────────────
+// 결과 편집 · 복사
+// ────────────────────────────────────────────────
+function setResult(text){
+  const ed = document.getElementById('result-editor');
+  ed.value = text || '';
+  document.getElementById('result-badge').textContent = currentMeta ? FORMATS[currentMeta.format].badge : '생성 전';
+  document.getElementById('result-target').textContent = currentMeta ? (currentMeta.date + ' · ' + currentMeta.org) : '—';
+  updateCounter();
+  hideSaveStatus();
+}
+
+function onResultInput(){
+  currentResult = document.getElementById('result-editor').value;
+  updateCounter();
+}
+
+function updateCounter(){
+  const len = (document.getElementById('result-editor').value || '').length;
+  document.getElementById('result-counter').textContent = len.toLocaleString('ko-KR') + '자';
+}
+
+function copyResult(){
+  const text = document.getElementById('result-editor').value.trim();
+  if(!text){ showToast('복사할 내용이 없습니다'); return; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text)
+      .then(()=>showToast('전체 내용이 복사되었습니다 ✓'))
+      .catch(()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); showToast('전체 내용이 복사되었습니다 ✓'); }
+  catch(e){ showToast('복사 실패 — 본문을 길게 눌러 직접 복사해 주세요'); }
+  document.body.removeChild(ta);
+}
+
+// ────────────────────────────────────────────────
+// 구글 드라이브 저장
+// ────────────────────────────────────────────────
+async function saveToDrive(){
+  const content = document.getElementById('result-editor').value.trim();
+  if(!content){ showToast('먼저 문서를 만들어 주세요'); return; }
+  if(!currentMeta){
+    showToast('강의 정보가 없습니다 — 작성 탭에서 다시 만들어 주세요');
+    return;
+  }
+
+  const btn = document.getElementById('save-btn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+
+  try{
+    const res = await fetch('/api/save-drive',{
+      method:'POST',
+      headers: requestHeaders(),
+      body: JSON.stringify({
+        date: currentMeta.date,
+        org: currentMeta.org,
+        field: currentMeta.field,
+        method: currentMeta.method,
+        audience: currentMeta.audience,
+        format: currentMeta.format,
+        note: currentMeta.note,
+        content,
+        lecturer: currentMeta.lecturer,
+        affiliation: currentMeta.affiliation
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+
+    if(res.status===401){
+      showToast('접근 코드가 필요합니다 — ⚙ 설정에서 입력해 주세요');
+      openSettings();
+      return;
+    }
+    if(!res.ok) throw new Error(data.message || data.error || '저장에 실패했습니다.');
+
+    if(data.mode === 'demo'){
+      showSaveStatus('demo',
+        '<b>드라이브 연동이 아직 설정되지 않았습니다.</b><br>' +
+        escapeHtml(data.notice || '') +
+        '<div class="save-links">문서명: ' + escapeHtml(data.docName || '') + '</div>');
+      showToast('연동 전이라 파일로 저장되지는 않았습니다');
+      return;
+    }
+
+    const stored = data.stored || {};
+    let links = '';
+    if(stored.docUrl) links += '<a href="' + escapeAttr(stored.docUrl) + '" target="_blank" rel="noopener">📄 문서 열기</a>';
+    if(stored.sheetUrl) links += '<a href="' + escapeAttr(stored.sheetUrl) + '" target="_blank" rel="noopener">📊 누적현황 시트</a>';
+    if(stored.folderUrl) links += '<a href="' + escapeAttr(stored.folderUrl) + '" target="_blank" rel="noopener">📁 강의일지_아카이브 폴더</a>';
+
+    showSaveStatus('ok',
+      '<b>드라이브에 저장했습니다.</b> ' + escapeHtml(data.docName || '') +
+      (data.savedAtLabel ? '<br>저장 시각: ' + escapeHtml(data.savedAtLabel) : '') +
+      (links ? '<div class="save-links">' + links + '</div>' : ''));
+    rememberDocUrl(stored.docUrl || '');
+    showToast('드라이브에 저장되었습니다 ✓');
+  }catch(e){
+    showSaveStatus('err', '<b>저장하지 못했습니다.</b> ' + escapeHtml(e && e.message ? e.message : '알 수 없는 오류'));
+    showToast('저장 실패 — 잠시 후 다시 시도해 주세요');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+function showSaveStatus(kind, html){
+  const el = document.getElementById('save-status');
+  el.className = 'save-status show ' + kind;
+  el.innerHTML = html;
+}
+function hideSaveStatus(){
+  const el = document.getElementById('save-status');
+  el.className = 'save-status';
+  el.innerHTML = '';
+}
+
+function rememberDocUrl(url){
+  if(!currentMeta) return;
+  const idx = savedList.findIndex(item =>
+    item.date === currentMeta.date && item.org === currentMeta.org && item.format === currentMeta.format);
+  if(idx >= 0 && url){
+    savedList[idx].docUrl = url;
+    persistHistory();
+  }
+}
+
+// ────────────────────────────────────────────────
+// 최근 기록 (이 기기에 5건)
+// ────────────────────────────────────────────────
+function addHistory(entry){
+  savedList = savedList.filter(item => !(
+    item.date === entry.date && item.org === entry.org && item.format === entry.format));
+  savedList.unshift({ ...entry, id: Date.now() });
+  savedList = savedList.slice(0, HISTORY_LIMIT);
+  persistHistory();
+  renderHistory();
+}
+
+function persistHistory(){
+  try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(savedList.slice(0, HISTORY_LIMIT))); }
+  catch(e){ showToast('저장 공간이 부족해 최근 기록을 남기지 못했습니다'); }
+}
+
+function renderHistory(){
+  const el = document.getElementById('history-list');
+  if(!savedList.length){
+    el.innerHTML = '<div class="empty-state"><span class="empty-icon">🗂</span>최근 기록이 없습니다.<br>문서를 만들면 이 기기에 최근 5건까지 임시로 남습니다.</div>';
+    return;
+  }
+  el.innerHTML = savedList.map(item=>{
+    const fmt = FORMATS[item.format] || FORMATS.journal;
+    return '<div class="history-item" onclick="viewHistory(' + item.id + ')">' +
+      '<div class="hi-top">' +
+        '<span class="hi-name">' + escapeHtml(item.org || '기관') + '</span>' +
+        '<div class="hi-right">' +
+          '<span class="hi-date">' + escapeHtml(item.date || '') + '</span>' +
+          '<button class="hi-del" onclick="deleteHistory(event,' + item.id + ')" aria-label="삭제">🗑</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="hi-preview">' + escapeHtml((item.content || '').slice(0, 140)) + '</div>' +
+      '<div class="hi-tags"><span class="hi-tag">' + escapeHtml(fmt.label) + '</span>' +
+        (item.field ? '<span class="hi-tag">' + escapeHtml(item.field) + '</span>' : '') +
+        (item.docUrl ? '<span class="hi-tag doc">드라이브 저장됨</span>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function viewHistory(id){
+  const item = savedList.find(s=>s.id===id);
+  if(!item) return;
+  currentResult = item.content || '';
+  currentMeta = {
+    date: item.date, org: item.org, field: item.field, format: item.format || 'journal',
+    method: item.method || '대면', audience: item.audience || '', memo: item.memo || '',
+    note: item.note || '', lecturer: item.lecturer || settings.lecturer,
+    affiliation: item.affiliation || settings.affiliation
+  };
+  setResult(currentResult);
+  if(item.docUrl){
+    showSaveStatus('ok','<b>드라이브에 저장된 문서입니다.</b><div class="save-links"><a href="' + escapeAttr(item.docUrl) + '" target="_blank" rel="noopener">📄 문서 열기</a></div>');
+  }
+  switchTab('result');
+}
+
+function deleteHistory(event, id){
+  event.stopPropagation();
+  if(!confirm('이 기록을 지울까요? (드라이브 문서는 그대로 남습니다)')) return;
+  savedList = savedList.filter(s=>s.id!==id);
+  persistHistory();
+  renderHistory();
+}
+
+function clearHistory(){
+  if(!confirm('이 기기의 최근 기록 5건을 모두 지울까요?\n드라이브에 저장한 문서는 그대로 남습니다.')) return;
+  savedList = [];
+  persistHistory();
+  renderHistory();
+  closeSettings();
+  showToast('최근 기록을 지웠습니다');
+}
+
+// ────────────────────────────────────────────────
+// 설정 · 연결 상태
+// ────────────────────────────────────────────────
+function openSettings(){
+  document.getElementById('set-affiliation').value = settings.affiliation || '';
+  document.getElementById('set-lecturer').value = settings.lecturer || '';
+  document.getElementById('set-code').value = settings.accessCode || '';
+  document.getElementById('settingsModal').classList.remove('hidden');
+  checkServer(false);
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.add('hidden'); }
+function closeSettingsOutside(e){ if(e.target.id==='settingsModal') closeSettings(); }
+
+function saveSettings(){
+  settings.affiliation = document.getElementById('set-affiliation').value.trim() || '119복지인권연구소 · ONEBLOCKAI연구소';
+  settings.lecturer = document.getElementById('set-lecturer').value.trim() || '이대영';
+  settings.accessCode = document.getElementById('set-code').value.trim();
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }catch(e){}
+  applySettings();
+  closeSettings();
+  showToast('설정이 저장되었습니다 ✓');
+  checkServer(false);
+}
+
+function setConn(kind, text){
+  const dot = document.getElementById('conn-dot');
+  dot.className = 'status-dot' + (kind ? ' ' + kind : '');
+  document.getElementById('conn-text').textContent = text;
+}
+
+async function checkServer(manual){
+  if(manual) setConn('', '확인 중…');
+  try{
+    const res = await fetch('/api/generate',{ method:'GET', headers: requestHeaders() });
+    if(res.status === 403){
+      setConn('warn', '브라우저에서 바로 연 파일이거나 허용되지 않은 주소입니다 (Vercel 배포 주소로 열어 주세요)');
+      return;
+    }
+    if(!res.ok){
+      setConn('err', '서버 응답 오류 (' + res.status + ') — 잠시 후 다시 확인해 주세요');
+      return;
+    }
+    const data = await res.json().catch(()=>({}));
+    if(!data.ready){
+      setConn('err', '서버는 연결되었지만 AI 키(ANTHROPIC_API_KEY)가 설정되지 않았습니다');
+      return;
+    }
+    if(data.accessCodeRequired && !settings.accessCode){
+      setConn('warn', '서버 연결됨 · 접근 코드를 입력해야 생성할 수 있습니다');
+      return;
+    }
+    setConn('ok', '서버 연결됨 · 바로 생성할 수 있습니다');
+  }catch(e){
+    if(manual) setConn('err', '서버에 연결하지 못했습니다 (인터넷 또는 배포 상태 확인)');
+  }
+}
+
+// ────────────────────────────────────────────────
+// PWA · 유틸
+// ────────────────────────────────────────────────
+function installPWA(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{
+      deferredPrompt = null;
+      document.getElementById('installBanner').classList.add('hidden');
+    });
+  }
+}
+function dismissInstall(e){
+  e.stopPropagation();
+  document.getElementById('installBanner').classList.add('hidden');
+}
+
+function escapeHtml(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escapeAttr(value){
+  return escapeHtml(value).replace(/javascript:/gi,'');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+</script>
+</body>
+</html>

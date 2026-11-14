@@ -1,0 +1,26 @@
+{
+  "name": "강의일지 · 결과보고",
+  "short_name": "강의일지",
+  "description": "강의 메모로 강의일지·결과보고서·안내 메일을 만들고 구글 드라이브에 저장하는 앱 (119복지인권연구소 · ONEBLOCKAI연구소)",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#1f3f66",
+  "orientation": "portrait",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# 비밀값·로그·시스템 파일은 올리지 않습니다.
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+node_modules/
+.vercel/
+.DS_Store
+Thumbs.db
+coverage/
+.tmp/
+*.local
+
+# 화면 캡처·미리보기는 저장소에 올리지 않습니다(작업 폴더에만 보관).
+preview/
